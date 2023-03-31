@@ -1,71 +1,85 @@
 {
-  "log": {
-    "access": "none",
-    "loglevel": "none"
-  },
-  "dns": {},
-  "routing": {
-    "domainStrategy": "AsIs",
-    "rules": [
-      {
-        "type": "field",
-        "ip": [
-          "geoip:private"
-        ],
-        "outboundTag": "block"
-      }
-    ]
-  },
-  "policy": {},
-  "inbounds": [
-    {
-      "port": 443,
-      "protocol": "vless",
-      "settings": {
-        "clients": [
-          {
-            "id": "0b4ee788-083b-4b8a-88f7-0d67c3a4b988",
-	    "email":"sging9538@gamil.com",
-            "flow": "xtls-rprx-vision"
-          }
-        ],
-        "decryption": "none",
-        "fallbacks": [
-          {
-            "dest": 8080
-          }
-        ]
-      },
-      "streamSettings": {
-        "network": "tcp",
-        "security": "xtls",
-        "xtlsSettings": {
-          "allowInsecure": false,
-          "minVersion": "1.2",
-          "alpn": [
-            "http/1.1"
-          ],
-          "certificates": [
-            {
-              "certificateFile": "/usr/local/etc/xray/ssl/xray_ssl.crt",
-              "keyFile": "/usr/local/etc/xray/ssl/xray_ssl.key"
-            }
-          ]
-        }
-      }
-    }
-  ],
-  "outbounds": [
-    {
-      "protocol": "freedom",
-      "tag": "direct"
+    "log": {
+        "loglevel": "warning"
     },
-    {
-      "protocol": "blackhole",
-      "tag": "block"
+    "routing": {
+        "domainStrategy": "IPIfNonMatch",
+        "rules": [
+            {
+                "type": "field",
+                "ip": [
+                    "geoip:cn"
+                ],
+                "outboundTag": "block"
+            }
+        ]
+    },
+    "inbounds": [
+        {
+            "listen": "0.0.0.0", // "0.0.0.0" Indicates listening to both IPv4 and IPv6
+            "port": 443, // The port on which the server listens
+            "protocol": "vless",
+            "settings": {
+                "clients": [
+                    {
+                        "id": "0b4ee788-083b-4b8a-88f7-0d67c3a4b988",
+                        "email":"sging9538@gamil.com",
+                        "flow": "xtls-rprx-vision"
+                    }
+                ],
+                "decryption": "none",
+                "fallbacks": [
+                    {
+                        "dest": "8001",
+                        "xver": 1
+                    },
+                    {
+                        "alpn": "h2",
+                        "dest": "8002",
+                        "xver": 1
+                    }
+                ]
+            },
+            "streamSettings": {
+                "network": "tcp",
+                "security": "tls",
+                "tlsSettings": {
+                    "rejectUnknownSni": true,
+                    "minVersion": "1.2",
+                    "certificates": [
+                        {
+                            "ocspStapling": 3600,
+                            "certificateFile": "/usr/local/etc/xray/ssl/xray_ssl.crt",
+                            "keyFile": "/usr/local/etc/xray/ssl/xray_ssl.key"
+                        }
+                    ]
+                }
+            },
+            "sniffing": {
+                "enabled": true,
+                "destOverride": [
+                    "http",
+                    "tls"
+                ]
+            }
+        }
+    ],
+    "outbounds": [
+        {
+            "protocol": "freedom",
+            "tag": "direct"
+        },
+        {
+            "protocol": "blackhole",
+            "tag": "block"
+        }
+    ],
+    "policy": {
+        "levels": {
+            "0": {
+                "handshake": 2, // The handshake time limit when the connection is established, in seconds, the default value is 4, it is recommended to be different from the default value
+                "connIdle": 120 // Connection idle time limit in seconds, the default value is 300, it is recommended to be different from the default value
+            }
+        }
     }
-  ],
-  "transport": {},
-  "stats": {},
-  "reverse": {}
 }
